@@ -96,7 +96,7 @@ def breadthFirstSearch(problem):
     """ Search the shallowest nodes in the search tree first. """
     currPath = []           # The path that is popped from the frontier in each loop
     currState =  problem.getStartState()    # The state(position) that is popped for the frontier in each loop
-
+    print(f"currState: {currState}")
     if problem.isGoalState(currState):     # Checking if the start state is also a goal state
         return currPath
 
