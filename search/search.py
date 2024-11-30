@@ -19,6 +19,7 @@ Pacman agents (in searchAgents.py).
 
 import util
 from util import*
+
 class SearchProblem:
     """
     This class outlines the structure of a search problem, but doesn't implement
@@ -72,6 +73,12 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
+
+# Complete the BFS, DFS, UCS, and A* search algorithms in the provided structure.
+
+from queue import PriorityQueue
+
+# Depth-First Search (DFS) implementation
 def depthFirstSearch(problem):
     """
     Search the deepest nodes in the search tree first.
@@ -87,42 +94,60 @@ def depthFirstSearch(problem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    """Search the deepest nodes in the search tree first."""
+    stack = [(problem.getStartState(), [], set())]  # Stack holds (state, path, visited)
+    while stack:
+        state, path, visited = stack.pop()
+        if problem.isGoalState(state):
+            return path
+        if state not in visited:
+            visited.add(state)
+            for successor, action, _ in problem.getSuccessors(state):
+                stack.append((successor, path + [action], visited))
+    print("Start:", problem.getStartState())
+    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
+    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
+    return []  # Return an empty list if no solution is found
 
+
+# Breadth-First Search (BFS) implementation
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    #util.raiseNotDefined()
-    """ Search the shallowest nodes in the search tree first. """
-    currPath = []           # The path that is popped from the frontier in each loop
-    currState =  problem.getStartState()    # The state(position) that is popped for the frontier in each loop
-    print(f"currState: {currState}")
-    if problem.isGoalState(currState):     # Checking if the start state is also a goal state
-        return currPath
+    """Search the shallowest nodes in the search tree first."""
+    """Search the shallowest nodes in the search tree first."""
+    from collections import deque
+    queue = deque([(problem.getStartState(), [])])  # Queue holds (state, path)
+    visited = set()
+    while queue:
+        state, path = queue.popleft()
+        if problem.isGoalState(state):
+            return path
+        if state not in visited:
+            visited.add(state)
+            for successor, action, _ in problem.getSuccessors(state):
+                queue.append((successor, path + [action]))
+    return []  # Return an empty list if no solution is found
 
-    frontier = Queue()
-    frontier.push( (currState, currPath) )     # Insert just the start state, in order to pop it first
-    explored = set()
-    while not frontier.isEmpty():
-        currState, currPath = frontier.pop()    # Popping a state and the corresponding path
-        # To pass autograder.py question2:
-        if problem.isGoalState(currState):
-            return currPath
-        explored.add(currState)
-        frontierStates = [ t[0] for t in frontier.list ]
-        for s in problem.getSuccessors(currState):
-            if s[0] not in explored and s[0] not in frontierStates:
-                # Lecture code:
-                # if problem.isGoalState(s[0]):
-                #     return currPath + [s[1]]
-                frontier.push( (s[0], currPath + [s[1]]) )      # Adding the successor and its path to the frontier
 
-    return []       # If this point is reached, a solution could not be found.
-
+# Uniform-Cost Search (UCS) implementation
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    pq = PriorityQueue()  # Priority queue for cost tracking
+    pq.put((0, problem.getStartState(), []))  # (cost, state, path)
+    visited = {}
+    while not pq.empty():
+        cost, state, path = pq.get()
+        if state in visited and visited[state] <= cost:
+            continue
+        visited[state] = cost
+        if problem.isGoalState(state):
+            return path
+        for successor, action, step_cost in problem.getSuccessors(state):
+            pq.put((cost + step_cost, successor, path + [action]))
+    return []  # Return an empty list if no solution is found
+
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -134,11 +159,214 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
+    """Search the node that has the lowest combined cost and heuristic first."""
+    pq = PriorityQueue()  # Priority queue for f(n) = g(n) + h(n)
+    pq.put((0 + heuristic(problem.getStartState(), problem), 0, problem.getStartState(), []))
+    visited = {}
+    while not pq.empty():
+        f, g, state, path = pq.get()
+        if state in visited and visited[state] <= g:
+            continue
+        visited[state] = g
+        if problem.isGoalState(state):
+            return path
+        for successor, action, step_cost in problem.getSuccessors(state):
+            new_g = g + step_cost
+            new_f = new_g + heuristic(successor, problem)
+            pq.put((new_f, new_g, successor, path + [action]))
+    return []  # Return an empty list if no solution is found
     util.raiseNotDefined()
 
 
 # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
-astar = aStarSearch
 ucs = uniformCostSearch
+astar = aStarSearch
+
+
+#Time & Path for Tiny maze search 
+import time
+
+# Example Maze (0 = free, 1 = wall)
+tiny_maze = [
+    [0, 0, 0],
+    [0, 1, 0],
+    [0, 0, 0],
+]
+
+start = (0, 0)  # Starting position
+goal = (2, 2)  # Goal position
+
+
+class MazeProblem:
+    def __init__(self, maze, start, goal):
+        self.maze = maze
+        self.start = start
+        self.goal = goal
+
+    def getStartState(self):
+        return self.start
+
+    def isGoalState(self, state):
+        return state == self.goal
+
+    def getSuccessors(self, state):
+        successors = []
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Possible movements: N, E, S, W
+        for dx, dy in directions:
+            x, y = state[0] + dx, state[1] + dy
+            if 0 <= x < len(self.maze) and 0 <= y < len(self.maze[0]) and self.maze[x][y] == 0:
+                successors.append(((x, y), (dx, dy), 1))  # Each step has a cost of 1
+        return successors
+
+    def getCostOfActions(self, actions):
+        return len(actions)  # Assuming each action has a unit cost
+
+# Define the problem
+problem = MazeProblem(tiny_maze, start, goal)
+
+# Test each algorithm and measure time + path length
+results = {}
+algorithms = {"DFS": dfs, "BFS": bfs, "UCS": ucs}
+
+for name, algorithm in algorithms.items():
+    start_time = time.time()
+    path = algorithm(problem)
+    end_time = time.time()
+    results[name] = {
+        "Path Length": len(path),
+        "Time Taken (s)": f"{(end_time - start_time):.6f}"
+        
+    }
+
+results
+
+
+#Time & Path for medium maze search 
+
+import time
+
+# Example Maze (0 = free, 1 = wall)
+medium_maze = [
+    [0, 0, 0, 0, 1],
+    [0, 1, 1, 0, 1],
+    [0, 0, 0, 0, 0],
+    [1, 1, 0, 1, 1],
+    [0, 0, 0, 0, 0],
+]
+
+
+start = (0, 0)  # Starting position
+goal = (4, 4)  # Goal position
+
+
+class MazeProblem:
+    def __init__(self, maze, start, goal):
+        self.maze = maze
+        self.start = start
+        self.goal = goal
+
+    def getStartState(self):
+        return self.start
+
+    def isGoalState(self, state):
+        return state == self.goal
+
+    def getSuccessors(self, state):
+        successors = []
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Possible movements: N, E, S, W
+        for dx, dy in directions:
+            x, y = state[0] + dx, state[1] + dy
+            if 0 <= x < len(self.maze) and 0 <= y < len(self.maze[0]) and self.maze[x][y] == 0:
+                successors.append(((x, y), (dx, dy), 1))  # Each step has a cost of 1
+        return successors
+
+    def getCostOfActions(self, actions):
+        return len(actions)  # Assuming each action has a unit cost
+
+# Define the problem
+problem = MazeProblem(medium_maze, start, goal)
+
+# Test each algorithm and measure time + path length
+results = {}
+algorithms = {"DFS": dfs, "BFS": bfs, "UCS": ucs}
+
+
+for name, algorithm in algorithms.items():
+    start_time = time.time()
+    path = algorithm(problem)
+    end_time = time.time()
+    results[name] = {
+        "Path Length": len(path),
+        "Time Taken (s)": f"{(end_time - start_time):.6f}"
+    }
+
+results
+
+
+#Time & Path big maze search 
+
+import time
+
+# Example Maze (0 = free, 1 = wall)
+big_maze = [
+    [0, 1, 0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 1, 0, 1, 1, 1, 1, 0, 1, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+]
+
+start = (0, 0)  # Starting position
+goal = (9, 9)  # Goal position
+
+
+class MazeProblem:
+    def __init__(self, maze, start, goal):
+        self.maze = maze
+        self.start = start
+        self.goal = goal
+
+    def getStartState(self):
+        return self.start
+
+    def isGoalState(self, state):
+        return state == self.goal
+
+    def getSuccessors(self, state):
+        successors = []
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Possible movements: N, E, S, W
+        for dx, dy in directions:
+            x, y = state[0] + dx, state[1] + dy
+            if 0 <= x < len(self.maze) and 0 <= y < len(self.maze[0]) and self.maze[x][y] == 0:
+                successors.append(((x, y), (dx, dy), 1))  # Each step has a cost of 1
+        return successors
+
+    def getCostOfActions(self, actions):
+        return len(actions)  # Assuming each action has a unit cost
+
+# Define the problem
+problem = MazeProblem(big_maze, start, goal)
+
+# Test each algorithm and measure time + path length
+results = {}
+algorithms = {"DFS": dfs, "BFS": bfs, "UCS": ucs}
+
+for name, algorithm in algorithms.items():
+    start_time = time.time()
+    path = algorithm(problem)
+    end_time = time.time()
+    results[name] = {
+        "Path Length": len(path),
+        "Time Taken (s)": f"{(end_time - start_time):.6f}"
+    }
+
+results
+
+
